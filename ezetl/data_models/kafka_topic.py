@@ -1,0 +1,167 @@
+import json
+import datetime
+from ezetl.data_models import DataModel
+from kafka import KafkaConsumer, KafkaProducer
+from ezetl.libs.kafka_utils import fetch_kafka_data_by_page
+from ezetl.utils.common_utils import gen_json_response, parse_json
+
+
+class DateEncoder(json.JSONEncoder):
+    """
+    自定义类，解决报错：
+    TypeError: Object of type 'datetime' is not JSON serializable
+    """
+
+    def default(self, obj):
+        if isinstance(obj, datetime.datetime):
+            return obj.strftime('%Y-%m-%d %H:%M:%S')
+
+        elif isinstance(obj, datetime.date):
+            return obj.strftime("%Y-%m-%d")
+
+        else:
+            return json.JSONEncoder.default(self, obj)
+
+
+class KafkaTopicModel(DataModel):
+    '''
+    Kafka
+    '''
+
+    def __init__(self, model_info):
+        super().__init__(model_info)
+        model_conf = self._model.get('model_conf', {})
+        self.topic = model_conf.get('name')
+        conn_conf = self._source['conn_conf']
+        self.bootstrap_servers = conn_conf['bootstrap_servers']
+        conn_setting = {'bootstrap_servers': self.bootstrap_servers}
+        self.group_id = None
+        if 'ext_params' in model_conf:
+            ext_params = parse_json(model_conf.get('ext_params'), {})
+            for k in ext_params:
+                conn_setting[k] = ext_params[k]
+        self.err_info = ''
+        if self._extract_info and self.topic:
+            try:
+                if isinstance(self.topic, list):
+                    self.consumer = KafkaConsumer(self.topic[0], **conn_setting)
+                    self.consumer.subscribe(self.topic)
+                else:
+                    self.consumer = KafkaConsumer(self.topic, **conn_setting)
+            except Exception as e:
+                self.err_info = str(e)
+        if self._load_info:
+            try:
+                self.producer = KafkaProducer(
+                    bootstrap_servers=self.bootstrap_servers,
+                    value_serializer=lambda x: json.dumps(x, cls=DateEncoder).encode('utf-8'),
+                    api_version=(0, 10)
+                )
+            except Exception as e:
+                print(e)
+                self.err_info = str(e)
+
+    def connect(self):
+        '''
+        连通性测试
+        '''
+        try:
+            consumer = KafkaConsumer(bootstrap_servers=self.bootstrap_servers)
+            topics = consumer.topics()
+            if self.topic and self.topic not in topics:
+                return False, '连接失败:未找到该topic'
+            return True, '连接成功'
+        except Exception as e:
+            return False, '连接失败:' + str(e)
+
+    def get_res_fields(self):
+        '''
+        获取字段列表
+        '''
+        return None
+
+    def get_search_type_list(self):
+        '''
+        获取可用高级查询类型
+        '''
+        return []
+
+    def get_extract_rules(self):
+        '''
+        获取可筛选项
+        :return:
+        '''
+        rules = []
+        return rules
+
+    def gen_extract_rules(self):
+        '''
+        解析筛选规则
+        :return:
+        '''
+        pass
+
+    def read_page(self, page=1, pagesize=1):
+        '''
+        分页读取数据
+        :param page:
+        :param pagesize:
+        :return:
+        '''
+        res_data = fetch_kafka_data_by_page(
+            page=page,
+            pagesize=pagesize,
+            bootstrap_servers=self.bootstrap_servers,
+            group_id=self.group_id,
+            topic=self.topic
+        )
+        return True, res_data
+
+    def read_batch(self):
+        '''
+        生成器分批读取数据
+        :return:
+        '''
+        for msg in self.consumer:
+            try:
+                data = msg.value
+                if isinstance(data, bytes):
+                    data = data.decode()
+                if isinstance(data, str):
+                    try:
+                        data = json.loads(data)
+                    except Exception as e:
+                        print(e)
+                res_data = {
+                    'records': [data],
+                    'total': 1
+                }
+                yield True, gen_json_response(res_data)
+            except Exception as e:
+                print(e)
+                
+    def write(self, res_data):
+        '''
+        写入数据
+        :param res_data: 
+        :return: 
+        '''
+        self.load_type = self._load_info.get('load_type', '')
+        if self.load_type not in ['insert']:
+            return False, f'写入类型参数错误,不支持类型{self.load_type}'
+        records = []
+        if isinstance(res_data, list) and res_data != []:
+            records = res_data
+        if isinstance(res_data, dict):
+            if 'records' in res_data and res_data['records'] != []:
+                records = res_data['records']
+            else:
+                records = [res_data]
+        try:
+            for c in records:
+                self.producer.send(self.topic, value=c)
+                print('produce', c)
+        except Exception as e:
+            return False, f'{str(e)[:-100]}'
+        return True, records
+

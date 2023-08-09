@@ -32,8 +32,8 @@ task_params = {
         'extract_info': {
             'extract_type': "batch",  # 读取方式，分批读取  
             'batch_size': 100,  # 每批读取数量
-            'extract_rules': { # 读取过滤条件 close >= 20000 and high < 40000
-              "get[close]": 30000, 
+            'extract_rules': {  # 读取过滤条件 close >= 30000 and high < 40000
+              "gte[close]": 30000, 
               "lt[high]": 40000
             }
         }
@@ -65,7 +65,7 @@ task_params = {
         }
     }
 }
-etl_task_process(task_params)
+etl_task_process(task_params, run_load=True)
 ```
 
 ### 拆分使用
@@ -101,7 +101,7 @@ reader_info = {
     'extract_info': {
         'batch_size': 100,  # 每批读取数量
         # 查询过滤条件 close >= 20000 and high < 40000
-        # 可简化为字典形式 'extract_rules': {"get[close]": 30000, "lt[high]": 40000}
+        # 可简化为字典形式 'extract_rules': {"gte[close]": 30000, "lt[high]": 40000}
         'extract_rules': [
             {'field': "close", "rule": "gte", "value": 20000},
             {'field': "high", "rule": "lt", "value": 40000}

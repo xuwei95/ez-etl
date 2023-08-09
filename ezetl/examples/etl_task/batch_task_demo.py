@@ -69,4 +69,4 @@ task_params = {
         }
     }
 }
-etl_task_process(task_params)
+etl_task_process(task_params, run_load=True)

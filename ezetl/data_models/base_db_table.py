@@ -50,8 +50,7 @@ class BaseDBTableModel(DataModel):
         连通性测试
         '''
         try:
-            print(self.table)
-            if self.table:
+            if self.table is not None:
                 return True, '连接成功'
             else:
                 return False, '连接失败'
@@ -101,9 +100,9 @@ class BaseDBTableModel(DataModel):
         else:
             i['nullable'] = True
         if 'primary_key' in i:
-            i['primary_key'] = i['primary_key'] == 1
+            i['is_primary_key'] = i['primary_key'] == 1
         else:
-            i['primary_key'] = False
+            i['is_primary_key'] = False
         if 'length' not in i:
             i['length'] = '0'
         if 'type' not in i:

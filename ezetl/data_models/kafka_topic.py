@@ -41,6 +41,9 @@ class KafkaTopicModel(DataModel):
             for k in ext_params:
                 conn_setting[k] = ext_params[k]
         self.err_info = ''
+        self.read_type = 'latest'  # 默认从最新开始读
+        self.gen_extract_rules()  # 判断是从头读还是从现在开始读
+        conn_setting['auto_offset_reset'] = self.read_type
         if self._extract_info and self.topic:
             try:
                 if isinstance(self.topic, list):
@@ -84,7 +87,15 @@ class KafkaTopicModel(DataModel):
         '''
         获取可用高级查询类型
         '''
-        return []
+        return [{
+            'name': '从头开始读取',
+            'value': 'read_earliest',
+            "default": f""
+        }, {
+            'name': '从最新开始读取',
+            'value': 'read_latest',
+            "default": f""
+        }]
 
     def get_extract_rules(self):
         '''
@@ -99,7 +110,13 @@ class KafkaTopicModel(DataModel):
         解析筛选规则
         :return:
         '''
-        pass
+        rules = [i for i in self.extract_rules if i['field'] == 'search_text']
+        if rules != []:
+            i = rules[0]
+            if i['rule'] == 'read_earliest':
+                self.read_type = 'earliest'
+            else:
+                self.read_type = 'latest'
 
     def read_page(self, page=1, pagesize=1):
         '''
@@ -139,7 +156,7 @@ class KafkaTopicModel(DataModel):
                 yield True, gen_json_response(res_data)
             except Exception as e:
                 print(e)
-                
+
     def write(self, res_data):
         '''
         写入数据

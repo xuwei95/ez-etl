@@ -102,16 +102,16 @@ def fetch_kafka_data_by_page(page=0, pagesize=10, bootstrap_servers=None, topic=
         consumer = KafkaConsumer(
             group_id=group_id,  # 指定此消费者实例属于的组名，可以不指定
             bootstrap_servers=bootstrap_servers,  # 指定kafka服务器
-            api_version=(0, 10, 2)
+            auto_offset_reset='earliest'
         )
         total = get_group_newest_offset(bootstrap_servers, group_id, topic)
     else:
         consumer = KafkaConsumer(
             bootstrap_servers=bootstrap_servers,  # 指定kafka服务器
+            auto_offset_reset='earliest'
         )
         total = get_newest_offset(bootstrap_servers, topic)
     tp = TopicPartition(topic, 0)
-    print(tp)
     consumer.assign([tp])
     start_offset = (page-1)*pagesize
     end_offset = start_offset + pagesize
@@ -122,13 +122,11 @@ def fetch_kafka_data_by_page(page=0, pagesize=10, bootstrap_servers=None, topic=
             'records': [],
             'total': total
         }
-    print(total, start_offset, end_offset)
     data_li = []
     consumer.seek(tp, start_offset)
     n = 0
     for msg in consumer:
         data = msg.value.decode('utf-8').encode('utf-8').decode('unicode_escape')
-        print(n, data)
         data_li.append(data)
         if n >= pagesize:
             return {

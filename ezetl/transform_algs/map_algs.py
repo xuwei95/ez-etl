@@ -168,7 +168,7 @@ def trans_time_format(source_data={}, rule_dict={}, context={}):
 
 def trans_field_type(source_data={}, rule_dict={}, context={}):
     '''
-    转换时间格式
+    转换字段格式
     :param source_data: 原始数据
     :param rule_dict: 配置信息
     [

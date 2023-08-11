@@ -271,12 +271,7 @@ class InfluxDBTableModel(DataModel):
 class InfluxDBSqlModel(DataModel):
 
     def __init__(self, model_info):
-        self.model_info = model_info
-        self._source = model_info.get('source', {})
-        self._model = model_info.get('model', {})
-        self._extract_info = model_info.get('extract_info', {})
-        self.extract_rules = self._extract_info.get('extract_rules', [])
-        self._load_info = model_info.get('load_info', {})
+        super().__init__(model_info)
         conn_conf = self._source['conn_conf']
         model_conf = self._model.get('model_conf', {})
         self.sql = model_conf.get('sql', 'show measurements')

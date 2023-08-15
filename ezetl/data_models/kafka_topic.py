@@ -88,13 +88,9 @@ class KafkaTopicModel(DataModel):
         获取可用高级查询类型
         '''
         return [{
-            'name': '从头开始读取',
-            'value': 'read_earliest',
-            "default": f""
-        }, {
-            'name': '从最新开始读取',
-            'value': 'read_latest',
-            "default": f""
+            'name': '读取方式',
+            'value': 'read_type',
+            "default": f"latest"
         }]
 
     def get_extract_rules(self):
@@ -110,10 +106,10 @@ class KafkaTopicModel(DataModel):
         解析筛选规则
         :return:
         '''
-        rules = [i for i in self.extract_rules if i['field'] == 'search_text']
+        rules = [i for i in self.extract_rules if i['rule'] == 'read_type']
         if rules != []:
             i = rules[0]
-            if i['rule'] == 'read_earliest':
+            if i['value'] == 'earliest':
                 self.read_type = 'earliest'
             else:
                 self.read_type = 'latest'

@@ -4,7 +4,7 @@ reader_info = {
     'source': {
         "type": "file",
         "conn_conf": {
-            "path":  "../test_files/btc_history.csv",
+            "path":  "../data/btc_history.csv",
         },
     },
     'model': {

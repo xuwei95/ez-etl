@@ -28,7 +28,11 @@ class MysqlBinlogModel(DataModel):
         self.listen_dbs = [database]
         model_conf = self._model['model_conf']
         # 监听数据表
-        self.listen_tables = model_conf.get('listen_tables')
+        listen_tables = model_conf.get('listen_tables', '')
+        if isinstance(listen_tables, str) and listen_tables != '':
+            self.listen_tables = listen_tables.split(',')
+        else:
+            self.listen_tables = None
         only_events = model_conf.get('only_events', '')
         if isinstance(only_events, str) and only_events != '':
             only_events = only_events.split(',')
@@ -75,13 +79,9 @@ class MysqlBinlogModel(DataModel):
         获取可用高级查询类型
         '''
         return [{
-            'name': '从头开始读取',
-            'value': 'read_earliest',
-            "default": f""
-        }, {
-            'name': '从最新开始读取',
-            'value': 'read_latest',
-            "default": f""
+            'name': '读取方式',
+            'value': 'read_type',
+            "default": f"latest"
         }]
 
     def get_extract_rules(self):
@@ -97,10 +97,10 @@ class MysqlBinlogModel(DataModel):
         解析筛选规则
         :return:
         '''
-        rules = [i for i in self.extract_rules if i['field'] == 'search_text']
+        rules = [i for i in self.extract_rules if i['rule'] == 'read_type']
         if rules != []:
             i = rules[0]
-            if i['rule'] == 'read_earliest':
+            if i['value'] == 'earliest':
                 self.read_type = 'earliest'
             else:
                 self.read_type = 'latest'

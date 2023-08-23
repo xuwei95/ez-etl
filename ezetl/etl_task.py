@@ -105,7 +105,7 @@ class EtlTask(object):
         '''
         if self.error_list != []:
             res_info = {
-                'code': 400,
+                'code': 500,
                 'msg': f"任务初始化出错：{','.join(self.error_list)}"
             }
             return res_info
@@ -116,7 +116,7 @@ class EtlTask(object):
         flag, res_data = self.reader.read_page(pagesize=page_size)
         if not flag:
             res_info = {
-                'code': 400,
+                'code': 500,
                 'msg': f"数据抽取出错：{res_data}"
             }
             return res_info
@@ -131,14 +131,14 @@ class EtlTask(object):
             alg_method = transform_alg_dict.get(method_code)
             if not alg_method:
                 res_info = {
-                    'code': 400,
+                    'code': 500,
                     'msg': f'数据转换第{idx}条规则出错：未找到处理函数{method_code}'
                 }
                 return res_info
             flag, res_data = alg_method(res_data, rule_dict, context)
             if not flag:
                 res_info = {
-                    'code': 400,
+                    'code': 500,
                     'msg': f'数据转换第{idx}条规则出错：{res_data}'
                 }
                 return res_info
@@ -146,14 +146,14 @@ class EtlTask(object):
         if run_load:
             if not self.writer:
                 res_info = {
-                    'code': 400,
+                    'code': 500,
                     'msg': f'数据装载出错：未找到数据装载对象'
                 }
                 return res_info
             flag, res_data = self.writer.write(res_data)
             if not flag:
                 res_info = {
-                    'code': 400,
+                    'code': 500,
                     'msg': f'数据装载出错：{res_data}'
                 }
                 return res_info
@@ -161,7 +161,7 @@ class EtlTask(object):
         flag, res_data = df_to_data(res_data)
         if not flag:
             res_info = {
-                'code': 400,
+                'code': 500,
                 'msg': f'{res_data}'
             }
             return res_info
@@ -194,7 +194,7 @@ def etl_task_process(params, run_load=False, logger=None, task_class=EtlTask):
     batch_size = etl_task.reader.batch_size
     extract_type = etl_task.extract_type
     if extract_type == 'once':
-        flag, res_data = etl_task.process_once(pagesize=batch_size)
+        flag, res_data = etl_task.process_once(pagesize=batch_size, run_load=run_load)
         if not flag:
             logger.error(f'数据装载出错：{res_data}')
     elif extract_type in ['batch', 'flow']:
@@ -212,20 +212,6 @@ def etl_task_process(params, run_load=False, logger=None, task_class=EtlTask):
                 if not flag:
                     logger.error(f"数据处理出错：{res_data}")
                     break
-                if run_load:
-                    if not etl_task.writer:
-                        res_info = {
-                            'code': 400,
-                            'msg': f'数据装载出错：未找到数据装载对象'
-                        }
-                        return res_info
-                    flag, res_data = etl_task.writer.write(res_data)
-                    if not flag:
-                        res_info = {
-                            'code': 400,
-                            'msg': f'数据装载出错：{res_data}'
-                        }
-                        return res_info
             except StopIteration:
                 logger.info('数据处理完成')
                 break

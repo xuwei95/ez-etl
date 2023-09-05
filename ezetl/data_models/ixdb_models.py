@@ -138,9 +138,9 @@ class InfluxDBTableModel(DataModel):
                 if isinstance(value, str):
                     value = f"'{value}'"
                 condition_str = ''
-                if rule == 'equal':
+                if rule in ['equal', 'eq']:
                     condition_str = f"{field} = {value}"
-                elif rule == 'f_equal':
+                elif rule in ['f_equal', 'neq']:
                     condition_str = f"{field} != {value}"
                 elif rule == 'gt':
                     condition_str = f"{field} > {value}"

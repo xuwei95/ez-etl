@@ -123,6 +123,7 @@ $RECYCLE.BIN/
 .idea*/
 .pytest_cache/
 datas/
+tests/
 *.config.py
 
 

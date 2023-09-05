@@ -166,9 +166,9 @@ class TableFileModel(BaseFileModel):
             value = i.get('value')
             value = trans_rule_value(value)
             if field and value:
-                if rule == 'equal':
+                if rule in ['equal', 'eq']:
                     self.df = self.df[self.df[field] == value]
-                elif rule == 'f_equal':
+                elif rule in ['f_equal', 'neq']:
                     self.df = self.df[self.df[field] != value]
                 elif rule == 'gt':
                     self.df = self.df[self.df[field] > value]

@@ -143,9 +143,9 @@ class MongoModel(DataModel):
             if field and field not in ['sql', 'search_key']:
                 if value:
                     q_dict = {}
-                    if rule == 'equal':
+                    if rule in ['equal', 'eq']:
                         q_dict = {field: value}
-                    elif rule == 'f_equal':
+                    elif rule in ['f_equal', 'neq']:
                         q_dict = {f"{field}__ne": value}
                     elif rule == 'gt':
                         q_dict = {f"{field}__gt": value}

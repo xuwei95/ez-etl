@@ -16,6 +16,16 @@ import uuid
 import pandas as pd
 import importlib
 
+time_symbol_dict = {
+    'Y': 86400 * 365,
+    'M': 86400 * 30,
+    'W': 86400 * 7,
+    'd': 86400,
+    'h': 3600,
+    'm': 60,
+    's': 1
+}
+
 
 class Singleton(type):
     '''
@@ -226,6 +236,7 @@ def request_url(url, method='get', params={}, headers={}, data={}, json={}, time
     res = requests.request(method, url, headers=headers, params=params, data=data, stream=True, timeout=timeout)
     return res
 
+
 def trans_value_type(value, trans_type='str'):
     '''
     转换值类型
@@ -261,53 +272,58 @@ def trans_rule_value(value):
     '''
     if not isinstance(value, str):
         return value
-    print(value)
-    time_dict = {
-        's': 1,
-        'm': 60,
-        'h': 3600,
-        'd': 86400,
-        'w': 86400 * 7,
-        'M': 86400 * 30,
-        'Y': 86400 * 365
-    }
-    #  以timestamp:开头的，转换时间，如&gt[date]=timestamp:-1d 取date大于当前时间往前倒1天的时间戳
+    #  以timestamp:开头的，转换当前时间时间戳，如timestamp:-1d 返回当前时间减1天的时间戳
     if value.startswith('timestamp:'):
         t = value[-1]
         now = get_now_time()
         try:
             value = int(value[10:-1].strip())
-            value = now + value * time_dict[t]
+            value = now + value * time_symbol_dict[t]
             return value
         except Exception as e:
             print(e)
+    #  以timestamp_ms:开头的，转换当前时间毫秒级时间戳，如timestamp_ms:-1d 返回当前时间减1天的毫秒级时间戳
     elif value.startswith('timestamp_ms:'):
         t = value[-1]
         now = get_now_time()
         try:
             value = int(value[13:-1].strip())
-            value = (now + value * time_dict[t]) * 1000
+            value = (now + value * time_symbol_dict[t]) * 1000
             return value
         except Exception as e:
             print(e)
-    #  以time:开头的，转换时间
-    #  如&gt[date]=time:-300s 取date大于当前时间往前倒300秒的数据
+    #  以time:开头的,转换当前时间,如，如time:-1d 返回当前时间减1天的日期字符串
     elif value.startswith('time:'):
         t = value[-1]
         now = get_now_time()
         try:
             value = int(value[5:-1].strip())
-            value = now + value * time_dict[t]
+            value = now + value * time_symbol_dict[t]
             value = timestamp_to_date(value)
         except Exception as e:
             print(e)
-    #  以date:开头的，转换日期时间
-    #  如时间2022-02-08 22:10:50 date: %Y-%m-%d %H 将时间转为当前时间格式后转回时间:2022-02-08 22:01:01
+    #  以date:开头的，转换当前时间的格式化日期字符串
+    #  如当前时间2022-02-08 22:10:50 "date: %Y-%m-%d %H" -> "2022-02-08 22:00:00"
     elif value.startswith('date:'):
         now = datetime.datetime.now()
         try:
             value = format_date(now, value[5:].strip())
             value = format_date(value)
+        except Exception as e:
+            print(e)
+    #  以datetime:开头的，转换当前时间的格式化日期字符串的python datetime类型
+    #  如当前时间2022-02-08 22:10:50 "datetime: %Y-%m-%d %H" -> 2022-02-08 22:00:00
+    elif value.startswith('datetime:'):
+        now = datetime.datetime.now()
+        try:
+            value = format_date(now, value[9:].strip())
+            value = format_date(value, res_type='datetime')
+        except Exception as e:
+            print(e)
+    # 以str: 开头的转为字符串
+    elif value.startswith('str:'):
+        try:
+            value = str(value[4:])
         except Exception as e:
             print(e)
     # 以int: 开头的转为整数
@@ -316,10 +332,10 @@ def trans_rule_value(value):
             value = int(value[4:])
         except Exception as e:
             print(e)
-    # 以float: 开头的转为整数
-    elif value.startswith('int:'):
+    # 以float: 开头的转为浮点数
+    elif value.startswith('float:'):
         try:
-            value = int(value[6:])
+            value = float(value[6:])
         except Exception as e:
             print(e)
     return value
@@ -424,15 +440,6 @@ def trans_time_length(time_length):
     :param time_length:
     :return:
     '''
-    time_symbol_dict = {
-        'Y': 86400 * 365,
-        'M': 86400 * 30,
-        'W': 86400 * 7,
-        'd': 86400,
-        'h': 3600,
-        'm': 60,
-        's': 1
-    }
     if time_length == 'forever':
         return 86400 * 365 * 100
     else:
@@ -626,7 +633,6 @@ def trans_dict_to_rules(api_form):
             rule = k
         for value in values:
             extract_rules.append({'field': field, 'rule': rule, 'value': value})
-    print(extract_rules)
     return extract_rules
 
 

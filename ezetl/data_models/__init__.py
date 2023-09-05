@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 
 class DataModel(ABC):
-    default_batch_size = 10000
+    default_batch_size = 1000
 
     def __init__(self, model_info):
         self.model_info = model_info

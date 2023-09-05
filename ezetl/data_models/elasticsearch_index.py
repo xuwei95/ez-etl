@@ -147,6 +147,10 @@ class EsIndexModel(DataModel):
             'name': 'sql',
             'value': 'sql',
             "default": f"select * from {self.index_name}"
+        }, {
+            'name': '原生查询',
+            'value': 'query_body',
+            "default": '{\n    \"query\": {},\n    \"aggs\": {}\n}'
         }]
 
     def get_extract_rules(self):
@@ -226,7 +230,6 @@ class EsIndexModel(DataModel):
         api_form = {}
         jl_tag = []
         for i in self.extract_rules:
-            print(i)
             field = i.get('field')
             rule = i.get('rule')
             value = i.get('value')
@@ -253,16 +256,18 @@ class EsIndexModel(DataModel):
                 jl_tag.append(field)
             elif rule == 'content_tag':
                 api_form['content_tag'] = value
-            elif rule == 'search_text':
-                if field == 'sql':
-                    api_form['search_key'] = f"sql:{value}"
-                elif field == 'search_key':
-                    api_form['search_key'] = value
             elif rule == 'jl_tag':
                 jl_tag.extend(value.split(','))
             elif rule == 'jl_type':
                 api_form[f'jl_type[{field}]'] = value
                 jl_tag.append(field)
+            elif rule == 'search_text':
+                if field == 'sql':
+                    api_form['search_key'] = f"sql:{value}"
+                elif field == 'search_key':
+                    api_form['search_key'] = value
+                elif field == 'query_body':
+                    api_form['search_key'] = f"query_body:{value}"
         if jl_tag != []:
             api_form['jl_tag'] = ','.join(list(set(jl_tag)))
         return api_form
@@ -276,7 +281,6 @@ class EsIndexModel(DataModel):
         '''
         api_form = self.gen_extract_rules()
         api_form['index_name'] = self.index_name
-        print(api_form)
         api_form['page'] = page
         api_form['pagesize'] = pagesize
         es_tools = EsQueryTool(api_form)
@@ -290,7 +294,6 @@ class EsIndexModel(DataModel):
         '''
         api_form = self.gen_extract_rules()
         api_form['index_name'] = self.index_name
-        print(api_form)
         # scroll 获取数据
         es_tools = EsQueryTool(api_form)
         query_body = es_tools.query_body
@@ -300,7 +303,6 @@ class EsIndexModel(DataModel):
         result = self.es_client.scroll_search(self.index_name, query_body)
         sid = result['_scroll_id']
         scroll_size = result['hits']['total']['value']
-        print(scroll_size)
         while scroll_size > 0:
             res_data = es_tools.gen_result(result)
             yield True, res_data

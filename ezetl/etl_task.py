@@ -14,6 +14,12 @@ class EtlTask(object):
         self.process_rules = task_params.get('process_rules', [])
         self.load_info = self.params.get('load')
         self.error_list = []
+        # 拓展处理算法
+        self.transform_alg_dict = transform_alg_dict
+        extend_alg_dict = task_params.get('extend_alg_dict', {})
+        if isinstance(extend_alg_dict, dict):
+            for k, v in extend_alg_dict.items():
+                self.transform_alg_dict[k] = v
 
     def gen_data_models(self):
         '''
@@ -46,7 +52,7 @@ class EtlTask(object):
         context = {}
         for rule in self.process_rules:
             method_code = rule.get('code')
-            alg_method = transform_alg_dict.get(method_code)
+            alg_method = self.transform_alg_dict.get(method_code)
             if not alg_method:
                 return False, f'数据转换第{idx}条规则出错：未找到处理函数{method_code}'
             rule_dict = rule.get('rule_dict')
@@ -82,7 +88,7 @@ class EtlTask(object):
         for rule in self.process_rules:
             method_code = rule.get('code')
             rule_dict = rule.get('rule_dict')
-            alg_method = transform_alg_dict.get(method_code)
+            alg_method = self.transform_alg_dict.get(method_code)
             if not alg_method:
                 return False, f'数据转换第{idx}条规则出错：未找到处理函数{method_code}'
             flag, res_data = alg_method(res_data, rule_dict, context)
@@ -128,7 +134,7 @@ class EtlTask(object):
         for rule in self.process_rules:
             method_code = rule.get('code')
             rule_dict = rule.get('rule_dict')
-            alg_method = transform_alg_dict.get(method_code)
+            alg_method = self.transform_alg_dict.get(method_code)
             if not alg_method:
                 res_info = {
                     'code': 500,

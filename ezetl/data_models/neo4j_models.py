@@ -25,6 +25,26 @@ class N4jGraphModel(DataModel):
         else:
             return False, '连接失败'
 
+    def get_res_fields(self):
+        '''
+        获取字段列表
+        '''
+        flag, res = self.read_page(pagesize=1)
+        if flag and res.get('code') == 200:
+            records = res['data']['records']
+            if records != []:
+                record = records[0]
+                fields = []
+                for k in record:
+                    field_dic = {
+                        'field_name': k,
+                        'field_value': k,
+                        'ext_params': {}
+                    }
+                    fields.append(field_dic)
+                return fields
+        return []
+
     def delete(self):
         '''
         删除
@@ -96,9 +116,9 @@ class N4jGraphModel(DataModel):
                 if value:
                     if isinstance(value, str):
                         value = f"'{value}'"
-                    if rule == 'equal':
+                    if rule in ['equal', 'eq']:
                         query = query.where(f"_.{field} = {value}")
-                    elif rule == 'f_equal':
+                    elif rule in ['f_equal', 'neq']:
                         query = query.where(f"NOT _.{field} = {value}")
                     elif rule == 'gt':
                         query = query.where(f"_.{field} > {value}")

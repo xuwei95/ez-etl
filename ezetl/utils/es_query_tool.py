@@ -3,6 +3,7 @@ es查询接口封装
 '''
 import requests
 from ezetl.libs.es import EsClient
+from ezetl.utils.common_utils import parse_json
 import re
 from urllib import parse
 import json
@@ -56,9 +57,9 @@ class EsQueryTool(object):
         self.f_contain_list = self.parse_f_contain()
         self.range_params = self.parse_range()
         self.jl_tag = self.parse_jl_tag()
-        self.search_key = self.parse_search_key()
         self.sort = self.parse_sort()
         self.return_fields = self.parse_return_fields()
+        self.search_key = self.parse_search_key()
         self.err_info = None
 
     def parse_jl_tag(self):
@@ -169,6 +170,14 @@ class EsQueryTool(object):
                 err, err_info = self.parse_sql(search_key[4:])
                 if err:
                     self.err_info = err_info
+            elif search_key.startswith('query_body:'):  # 以query_body: 开头的,将查询体设为设置的查询
+                query_body = self.parse_sql(search_key[11:])
+                query_body = parse_json(query_body)
+                if isinstance(query_body, dict):
+                    if "query" in query_body:
+                        self.query_body["query"] = query_body["query"]
+                    if "aggs" in query_body:
+                        self.query_body["aggs"] = query_body["aggs"]
             else:
                 tmp_str = self.change_search_key(search_key)
                 if isinstance(tmp_str, dict):

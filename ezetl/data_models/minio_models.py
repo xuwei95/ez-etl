@@ -1,24 +1,34 @@
-import os.path
+import json
+
 from ezetl.data_models import DataModel
-from ezetl.utils.common_utils import trans_rule_value, read_file, md5, gen_json_response, parse_json
+from ezetl.utils.common_utils import trans_rule_value, gen_json_response, parse_json, md5
 import pandas as pd
+from minio import Minio
+import os
 import io
 
 
-class BaseFileModel(DataModel):
+class BaseMinioModel(DataModel):
 
     def __init__(self, model_info):
         super().__init__(model_info)
         conn_conf = self._source.get('conn_conf', {})
-        self.file_path = conn_conf.get('path')
+        url = conn_conf.get('url')
+        access_key = conn_conf.get('username')
+        secret_key = conn_conf.get('password')
+        self.bucket = conn_conf.get('bucket')
+        self._client = Minio(endpoint=url,
+                             access_key=access_key,
+                             secret_key=secret_key,
+                             secure=False)
 
     def connect(self):
         '''
         连通性测试
         '''
         try:
-            file_obj = read_file(self.file_path)
-            if file_obj:
+            buckets = self._client.list_buckets()
+            if self.bucket in buckets:
                 return True, '连接成功'
             else:
                 return False, '连接失败'
@@ -26,10 +36,12 @@ class BaseFileModel(DataModel):
             return False, str(e)
 
 
-class TableFileModel(BaseFileModel):
+class TableMinioModel(BaseMinioModel):
 
     def __init__(self, model_info):
         super().__init__(model_info)
+        model_conf = self._model['model_conf']
+        self.file_name = model_conf.get('name')
 
     def connect(self):
         '''
@@ -60,42 +72,14 @@ class TableFileModel(BaseFileModel):
             print(e)
         return res_fields
 
-    def read_file_path(self, file_path, use_cache=False, cache_size=1000):
-        '''
-        预览模式读取较大网络文件时缓存文件前n条直接读取
-        '''
-        if use_cache:
-            if not os.path.exists('tmp'):
-                os.mkdir('tmp')
-            cache_file_path = os.path.join('tmp', f"{md5(file_path)}_{cache_size}")
-            if os.path.exists(cache_file_path):
-                content_value = open(cache_file_path, 'rb').read()
-                file_obj = io.BytesIO(content_value)
-                return file_obj
-            else:
-                file_obj = read_file(file_path)
-                df = self.get_df(file_obj, nrows=cache_size)
-                f = io.BytesIO()
-                if self.file_path.endswith('.csv'):
-                    df.to_csv(f, index=False)
-                else:
-                    df.to_excel(f, index=False)
-                content_value = f.getvalue()
-                cache_file = open(cache_file_path, 'wb')
-                cache_file.write(content_value)
-                cache_file.close()
-                return f
-        else:
-            file_obj = read_file(file_path)
-            return file_obj
-
-    def get_df(self, file_obj, nrows=None):
+    def get_df(self, nrows=None):
         '''
         获取pandas df
         '''
         df = None
         try:
-            if self.file_path.endswith('.csv'):
+            file_obj = self._client.get_object(self.bucket, self.file_name)
+            if self.file_name.endswith('.csv'):
                 df = pd.read_csv(file_obj, dtype=object, nrows=nrows)
             else:
                 df = pd.read_excel(file_obj, dtype=object, nrows=nrows)
@@ -133,9 +117,6 @@ class TableFileModel(BaseFileModel):
           }, {
             'name': '小于等于',
             'value': 'lte'
-          }, {
-            'name': '缓存数据读取',
-            'value': 'use_cache'
           }
         ]
         return rules
@@ -145,18 +126,7 @@ class TableFileModel(BaseFileModel):
         解析筛选规则
         :return:
         '''
-        cache_rules = [i for i in self.extract_rules if i.get('rule') == 'use_cache']
-        cache_size = 0
-        if cache_rules != []:
-            try:
-                cache_size = int(cache_rules[0].get('value'))
-            except Exception as e:
-                print(e)
-        if cache_size > 0:
-            self.file_obj = self.read_file_path(self.file_path, use_cache=True, cache_size=cache_size)
-        else:
-            self.file_obj = self.read_file_path(self.file_path, use_cache=False)
-        self.df = self.get_df(self.file_obj)
+        self.df = self.get_df()
         if self.df is None:
             return False, '文件读取错误'
         for i in self.extract_rules:
@@ -223,18 +193,44 @@ class TableFileModel(BaseFileModel):
             }
             yield True, gen_json_response(result)
 
+    def write(self, res_data):
+        self.load_type = self._load_info.get('load_type', '')
+        if self.load_type not in ['insert']:
+            return False, f'写入类型参数错误,不支持类型{self.load_type}'
+        records = []
+        if isinstance(res_data, list) and res_data != []:
+            records = res_data
+        if isinstance(res_data, dict):
+            if 'records' in res_data and res_data['records'] != []:
+                records = res_data['records']
+            else:
+                records = [res_data]
+        try:
+            df = pd.DataFrame(records)
+            f = io.BytesIO()
+            if self.file_name.endswith('.csv'):
+                df.to_csv(f, index=False)
+            else:
+                df.to_excel(f, index=False)
+            content_value = f.getvalue()
+            self._client.put_object(self.bucket, self.file_name, content_value)
+        except Exception as e:
+            return False, f'{str(e)[:100]}'
+        return True, res_data
 
-class JsonFileModel(TableFileModel):
+
+class JsonMinioModel(TableMinioModel):
 
     def __init__(self, model_info):
         super().__init__(model_info)
 
-    def get_df(self, file_obj, nrows=None):
+    def get_df(self, nrows=None):
         '''
         获取pandas df
         '''
         df = None
         try:
+            file_obj = self._client.get_object(self.bucket, self.file_name)
             json_str = file_obj.read().decode()
             json_obj = parse_json(json_str, [])
             if isinstance(json_obj, dict):
@@ -245,45 +241,72 @@ class JsonFileModel(TableFileModel):
             print(e)
         return df
 
+    def write(self, res_data):
+        self.load_type = self._load_info.get('load_type', '')
+        if self.load_type not in ['insert']:
+            return False, f'写入类型参数错误,不支持类型{self.load_type}'
+        records = []
+        if isinstance(res_data, list) and res_data != []:
+            records = res_data
+        if isinstance(res_data, dict):
+            if 'records' in res_data and res_data['records'] != []:
+                records = res_data['records']
+            else:
+                records = [res_data]
+        try:
+            content_value = json.dumps(records, ensure_ascii=False).encode()
+            self._client.put_object(self.bucket, self.file_name, content_value)
+        except Exception as e:
+            return False, f'{str(e)[:100]}'
+        return True, res_data
 
-class H5FileModel(TableFileModel):
+
+class H5MinioModel(TableMinioModel):
 
     def __init__(self, model_info):
         super().__init__(model_info)
 
-    def read_file_path(self, file_path, use_cache=False, cache_size=1000000):
-        '''
-        根据文件路径读取文件
-        '''
-        if file_path.startswith('http'):
-            use_cache = True
-
-        if use_cache:
-            if not os.path.exists('tmp'):
-                os.mkdir('tmp')
-            cache_file_path = os.path.join('tmp', f"{md5(file_path)}_{cache_size}")
-            if os.path.exists(cache_file_path):
-                return cache_file_path
-            else:
-                file_obj = read_file(file_path)
-                content_value = file_obj.read()
-                cache_file = open(cache_file_path, 'wb')
-                cache_file.write(content_value)
-                cache_file.close()
-                return cache_file_path
-        else:
-            file_obj = file_path
-            return file_obj
-
-    def get_df(self, file_obj, nrows=None):
+    def get_df(self, nrows=None):
         '''
         获取pandas df
         '''
         df = None
         try:
-            df = pd.read_hdf(self.file_obj)
+            file_obj = self._client.get_object(self.bucket, self.file_name)
+            if not os.path.exists('tmp'):
+                os.mkdir('tmp')
+            cache_file_path = os.path.join('tmp', f"{md5(self.bucket + self.file_name)}")
+            if not os.path.exists(cache_file_path):
+                content_value = file_obj.read()
+                cache_file = open(cache_file_path, 'wb')
+                cache_file.write(content_value)
+                cache_file.close()
+            df = pd.read_hdf(cache_file_path)
             df.fillna("", inplace=True)
         except Exception as e:
             print(e)
         return df
+
+    def write(self, res_data):
+        self.load_type = self._load_info.get('load_type', '')
+        if self.load_type not in ['insert']:
+            return False, f'写入类型参数错误,不支持类型{self.load_type}'
+        records = []
+        if isinstance(res_data, list) and res_data != []:
+            records = res_data
+        if isinstance(res_data, dict):
+            if 'records' in res_data and res_data['records'] != []:
+                records = res_data['records']
+            else:
+                records = [res_data]
+        try:
+            df = pd.DataFrame(records)
+            f = io.BytesIO()
+            df.to_hdf(f)
+            content_value = f.getvalue()
+            self._client.put_object(self.bucket, self.file_name, content_value)
+        except Exception as e:
+            return False, f'{str(e)[:100]}'
+        return True, res_data
+
 

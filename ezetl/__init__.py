@@ -1,6 +1,12 @@
 reader_map = {
     'file:None': 'ezetl.data_models.file_models.BaseFileModel',
     'file:file_table': 'ezetl.data_models.file_models.TableFileModel',
+    'file:file_json': 'ezetl.data_models.file_models.JsonFileModel',
+    'file:file_h5': 'ezetl.data_models.file_models.H5FileModel',
+    'minio:None': 'ezetl.data_models.minio_models.BaseMinioModel',
+    'minio:minio_table': 'ezetl.data_models.minio_models.TableMinioModel',
+    'minio:minio_json': 'ezetl.data_models.minio_models.JsonMinioModel',
+    'minio:minio_h5': 'ezetl.data_models.minio_models.H5MinioModel',
     'mysql:None': 'ezetl.data_models.base_db_sql.BaseDBSqlModel',
     'mysql:sql': 'ezetl.data_models.base_db_sql.BaseDBSqlModel',
     'mysql:mysql_table': 'ezetl.data_models.mysql_table.MysqlTableModel',

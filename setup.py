@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-version = '1.0.5'
+version = '1.0.7'
 
 setup(
     name='ez-etl',
@@ -37,6 +37,7 @@ setup(
         "kafka-python==2.0.2",
         "mongoengine==0.24.2",
         "mysql-replication==0.27"
+        "minio==7.1.1"
     ],
     keywords="etl, extract, transform, load, excel, csv, mysql, kafka, elasticsearch, neo4j, influxdb, mongodb, clickhouse",
 )

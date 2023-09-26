@@ -14,6 +14,9 @@ class PrometheusClient(object):
     def __init__(self, **kwargs):
         self._client = PrometheusConnect(**kwargs)
 
+    def conn_test(self):
+        return self._client.check_prometheus_connection()
+
     def get_all_metrics(self):
         '''
         获取metric列表

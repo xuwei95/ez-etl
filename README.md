@@ -233,8 +233,18 @@ for flag, read_data in reader.read_batch():
 ## 支持数据源
 | 数据源类型 | 数据模型类型 | 读取 | 写入
 |:-----:|:-----:|:-----:|:-----:|
-| 文件 | 表格文件(csv/excel) | 支持 | 待支持 |
-| kafka | kafka topic | 支持 | 支持 |
+| http | json api | 支持 | - |
+| http | html | 支持 | - |
+| 文件 | 表格文件(csv/excel) | 支持 | - |
+| 文件 | json文件 | 支持 | - |
+| 文件 | h5文件 | 支持 | - |
+| minio对象存储 | 表格文件(csv/excel) | 支持 | 支持 |
+| minio对象存储 | json文件 | 支持 | 支持 |
+| minio对象存储 | h5文件 | 支持 | 支持 |
+| redis | 字符串 | 支持 | 支持 |
+| redis | 列表 | 支持 | 支持 |
+| redis | 队列 | 支持 | 支持 |
+| redis | 哈希 | 支持 | 支持 |
 | mysql | mysql表 | 支持 | 支持 |
 | mysql | sql | 支持 | - |
 | mysql | binlog数据流 | 支持 | - |
@@ -246,3 +256,5 @@ for flag, read_data in reader.read_batch():
 | neo4j | sql | 支持 | - |
 | influxdb | influxdb表 | 支持 | 支持 |
 | influxdb | sql | 支持 | - |
+| prometheus | promql | 支持 | - |
+| kafka | kafka topic | 支持 | 支持 |

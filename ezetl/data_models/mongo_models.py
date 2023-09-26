@@ -47,7 +47,14 @@ class MongoModel(DataModel):
         '''
         res_fields = []
         try:
-            pass
+            # todo: 获取不到具体字段
+            fields = self.model._fields
+            for k, v in fields.items():
+                dic = {
+                    'field_name': v.name,
+                    'field_value': v.name
+                }
+                res_fields.append(dic)
         except Exception as e:
             print(e)
         return res_fields

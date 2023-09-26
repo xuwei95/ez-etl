@@ -209,7 +209,7 @@ class TableFileModel(BaseFileModel):
         '''
         flag, res_data = self.gen_extract_rules()
         if not flag:
-            return False, res_data
+            yield False, res_data
         total = len(res_data)
         pagesize = self._extract_info.get('batch_size', 1000)
         total_pages = total // pagesize + 1

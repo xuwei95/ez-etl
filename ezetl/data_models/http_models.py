@@ -16,15 +16,35 @@ class BaseHttpModel(DataModel):
         except Exception as e:
             print(e)
             self.timeout = 60
-        self.req_body = parse_json(self.conn_conf.get('body'), {})
+        self.req_body = parse_json(self.conn_conf.get('req_body'), {})
+        self.req_params = {}
         self.auth_types = self.model_conf.get('auth_type', '').split(',')
+
+    def get_search_type_list(self):
+        '''
+        获取可用高级查询类型
+        '''
+        return [{
+            'name': '请求参数',
+            'value': 'req_body',
+            "default": self.req_body
+        }]
 
     def connect(self):
         '''
         连通性测试
         '''
         try:
-            self.response = request_url(method=self.method, url=self.url, headers=self.headers, data=self.req_body, timeout=self.timeout)
+            body_rules = [i for i in self.extract_rules if
+                        i['field'] == 'search_text' and i['rule'] == 'req_body' and i['value']]
+            if body_rules != []:
+                req_body = parse_json(body_rules[0]['value'])
+                if req_body is not None:
+                    if self.method == 'get':
+                        self.req_params = req_body
+                    else:
+                        self.req_body = req_body
+            self.response = request_url(method=self.method, url=self.url, headers=self.headers, params=self.req_params, data=self.req_body, timeout=self.timeout)
             return True, '连接成功'
         except Exception as e:
             return False, str(e)[:100]

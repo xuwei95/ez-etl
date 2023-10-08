@@ -14,11 +14,7 @@ class EsIndexModel(DataModel):
         self.auth_types = model_conf.get('auth_type', '').split(',')
         conn_conf = self._source['conn_conf']
         url = conn_conf.get('url')
-        hosts = url.split(',')
-        es_hosts = []
-        for h in hosts:
-            l = h.split(':')
-            es_hosts.append({'host': l[0], 'port': l[1]})
+        es_hosts = url.split(',')
         es_conf = {
             'hosts': es_hosts
         }

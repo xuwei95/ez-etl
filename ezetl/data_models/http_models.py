@@ -7,7 +7,7 @@ class BaseHttpModel(DataModel):
     def __init__(self, model_info):
         super().__init__(model_info)
         self.conn_conf = self._source['conn_conf']
-        self.model_conf = self._model['model_conf']
+        self.model_conf = self._model.get('model_conf', {})
         self.url = self.conn_conf.get('url')
         self.method = self.conn_conf.get('method')
         self.headers = parse_json(self.conn_conf.get('headers', {}))
@@ -27,7 +27,7 @@ class BaseHttpModel(DataModel):
         return [{
             'name': '请求参数',
             'value': 'req_body',
-            "default": self.req_body
+            "default": str(self.req_body)
         }]
 
     def connect(self):

@@ -115,10 +115,10 @@ class EtlTask(object):
                 'msg': f"任务初始化出错：{','.join(self.error_list)}"
             }
             return res_info
-        # 数据抽取，抽取最多100条测试数据
-        page_size = self.extract_info.get('batch_size', 100)
-        if page_size > 100:
-            page_size = 100
+        # 数据抽取，抽取最多1000条测试数据
+        page_size = self.extract_info.get('batch_size', 1000)
+        if page_size > 1000:
+            page_size = 1000
         flag, res_data = self.reader.read_page(pagesize=page_size)
         if not flag:
             res_info = {

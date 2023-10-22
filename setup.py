@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-version = '1.0.14'
+version = '1.0.16'
 
 setup(
     name='ez-etl',
@@ -38,7 +38,8 @@ setup(
         "mongoengine==0.24.2",
         "mysql-replication==0.27",
         "minio==7.1.1",
-        "prometheus-api-client==0.5.1"
+        "prometheus-api-client==0.5.1",
+        "akshare"
     ],
     keywords="etl, extract, transform, load, excel, csv, mysql, kafka, elasticsearch, neo4j, influxdb, mongodb, clickhouse",
 )

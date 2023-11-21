@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-version = '1.0.16'
+version = '1.0.19'
 
 setup(
     name='ez-etl',
@@ -21,8 +21,6 @@ setup(
         "sshtunnel==0.4.0",
         "python-dateutil==2.8.2",
         "pandas>=1.0.0",
-        # "xorbits==0.3.2",
-        # "pyarrow>=5.0.0",
         "openpyxl==3.0.9",
         "xlrd==1.2.0",
         "minio==7.1.1",
@@ -39,7 +37,10 @@ setup(
         "mysql-replication==0.27",
         "minio==7.1.1",
         "prometheus-api-client==0.5.1",
-        "akshare"
+        "akshare",
+        "ccxt"
+        # "xorbits==0.3.2",
+        # "pyarrow>=5.0.0",
     ],
     keywords="etl, extract, transform, load, excel, csv, mysql, kafka, elasticsearch, neo4j, influxdb, mongodb, clickhouse",
 )

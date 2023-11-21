@@ -12,7 +12,7 @@ task_params = {
                 "port": 3306,
                 "username": "root",
                 "password": "123456",
-                "database_name": "naivedata"
+                "database_name": "ezdata"
             },
             "ext_params": {}
         },

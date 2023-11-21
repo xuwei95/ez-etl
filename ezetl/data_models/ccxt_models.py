@@ -1,17 +1,17 @@
 import json
-import os.path
 from ezetl.data_models import DataModel
 from ezetl.utils.common_utils import trans_rule_value, gen_json_response, parse_json
 import inspect
 import pandas as pd
-import io
 
 
-class AkShareModel(DataModel):
+class CCxtModel(DataModel):
 
     def __init__(self, model_info):
         super().__init__(model_info)
         model_conf = self._model.get('model_conf', {})
+        self.exchange_id = model_conf.get('exchange_id', '')
+        self.ext_params = parse_json(model_conf.get('ext_params'), {})
         self.method = model_conf.get('method', '')
         self.auth_types = model_conf.get('auth_type', '').split(',')
 
@@ -20,14 +20,20 @@ class AkShareModel(DataModel):
         连通性测试
         '''
         try:
-            import akshare as ak
-            if self.method != '':
-                self.fetch_function = getattr(ak, self.method)
+            import ccxt
+            if self.exchange_id != '':
+                exchange_class = getattr(ccxt, self.exchange_id)
+                self.exchange = exchange_class(self.ext_params)
+                self.fetch_function = getattr(self.exchange, self.method)
                 sig = inspect.signature(self.fetch_function)
                 params = sig.parameters
                 default_parmas = {}
                 for name, param in params.items():
-                    default_parmas[name] = param.default
+                    _default = param.default
+                    if _default is inspect.Parameter.empty:
+                        _default = ""
+                    print(name, _default)
+                    default_parmas[name] = _default
                 self.func_params = default_parmas
             return True, '连接成功'
         except Exception as e:
@@ -73,24 +79,58 @@ class AkShareModel(DataModel):
         rules = [{
             'name': '等于',
             'value': 'equal'
-          }, {
+        }, {
             'name': '不等于',
             'value': 'f_equal'
-          }, {
+        }, {
             'name': '大于',
             'value': 'gt'
-          }, {
+        }, {
             'name': '大于等于',
             'value': 'gte'
-          }, {
+        }, {
             'name': '小于',
             'value': 'lt'
-          }, {
+        }, {
             'name': '小于等于',
             'value': 'lte'
-          }
+        }
         ]
         return rules
+
+    def gen_dataframe(self, res_data):
+        '''
+        将目标数据转换为dataframe
+        '''
+        if self.method == 'fetch_ohlcv':
+            data_li = []
+            for ohlcv in res_data:
+                dic = {
+                    'exchange': self.exchange_id,
+                    'time': ohlcv[0],
+                    'symbol': self.func_params['symbol'],
+                    'timeframe': self.func_params['timeframe'],
+                    'open': ohlcv[1],
+                    'high': ohlcv[2],
+                    'low': ohlcv[3],
+                    'close': ohlcv[4],
+                    'volume': ohlcv[5]
+                }
+                data_li.append(dic)
+            df = pd.DataFrame(data_li)
+        elif self.method == 'load_markets':
+            data_li = []
+            for symbol, data in res_data.items():
+                data['exchange'] = self.exchange_id
+                data_li.append(data)
+            df = pd.DataFrame(data_li)
+        elif self.method in ['fetch_ticker', 'fetch_order_book', 'fetch_status']:
+            res_data['exchange'] = self.exchange_id
+            data_li = [res_data]
+            df = pd.DataFrame(data_li)
+        else:
+            df = pd.DataFrame(res_data)
+        return df
 
     def gen_extract_rules(self):
         '''
@@ -110,7 +150,8 @@ class AkShareModel(DataModel):
         for k in self.func_params:
             query_params[k] = trans_rule_value(self.func_params[k])
         try:
-            self.df = self.fetch_function(**query_params)
+            res_data = self.fetch_function(**query_params)
+            self.df = self.gen_dataframe(res_data)
         except Exception as e:
             return False, str(e)
         for i in self.extract_rules:

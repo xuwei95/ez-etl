@@ -1,6 +1,8 @@
 reader_map = {
     'akshare:None': 'ezetl.data_models.akshare_models.AkShareModel',
     'akshare:akshare_api': 'ezetl.data_models.akshare_models.AkShareModel',
+    'ccxt:None': 'ezetl.data_models.ccxt_models.CCxtModel',
+    'ccxt:ccxt_api': 'ezetl.data_models.ccxt_models.CCxtModel',
     'file:None': 'ezetl.data_models.file_models.BaseFileModel',
     'file:file_table': 'ezetl.data_models.file_models.TableFileModel',
     'file:file_json': 'ezetl.data_models.file_models.JsonFileModel',

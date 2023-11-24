@@ -3,7 +3,7 @@ from ezetl.utils.common_utils import import_class, trans_dict_to_rules
 from ezetl import reader_map, writer_map
 
 
-def get_reader(model_info):
+def get_reader(model_info, extend_model_dict={}):
     '''
     获取reader对象
     :return:
@@ -14,6 +14,9 @@ def get_reader(model_info):
     source_type = model_info['source'].get('type')
     model_type = model_info['model'].get('type')
     key = f"{source_type}:{model_type}"
+    if extend_model_dict != {}:
+        for k, v in extend_model_dict.items():
+            reader_map[k] = v
     model_class = reader_map.get(key)
     if model_class is None:
         return False, '未找到对应模型'
@@ -25,7 +28,7 @@ def get_reader(model_info):
         return False, str(e)
 
 
-def get_writer(model_info):
+def get_writer(model_info, extend_model_dict={}):
     '''
     获取writer对象
     :return:
@@ -33,6 +36,9 @@ def get_writer(model_info):
     source_type = model_info['source'].get('type')
     model_type = model_info['model'].get('type')
     key = f"{source_type}:{model_type}"
+    if extend_model_dict != {}:
+        for k, v in extend_model_dict.items():
+            reader_map[k] = v
     model_class = writer_map.get(key)
     if model_class is None:
         return False, '未找到对应模型'

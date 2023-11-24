@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-version = '1.0.19'
+version = '1.0.20'
 
 setup(
     name='ez-etl',
@@ -26,21 +26,34 @@ setup(
         "minio==7.1.1",
         "sqlalchemy>=1.2.0",
         "pymysql==1.0.2",
-        "elasticsearch>=7.15.2",
+        "elasticsearch>=7.17.2",
         "redis==4.0.2",
-        "clickhouse-driver==0.2.3",
-        "clickhouse-sqlalchemy== 0.2.0",
-        "influxdb==5.3.1",
-        "py2neo==2020.0.0",
         "kafka-python==2.0.2",
-        "mongoengine==0.24.2",
         "mysql-replication==0.27",
-        "minio==7.1.1",
-        "prometheus-api-client==0.5.1",
-        "akshare",
-        "ccxt"
-        # "xorbits==0.3.2",
-        # "pyarrow>=5.0.0",
+        "minio==7.1.1"
     ],
+    extras_require={
+        'all': [
+            "xorbits==0.3.2",
+            "pyarrow>=5.0.0",
+            "akshare",
+            "ccxt",
+            "psycopg2-binary",
+            "pymssql",
+            "cx_oracle",
+            "clickhouse-sqlalchemy",
+            "thrift",
+            "thrift_sasl",
+            "pyhive",
+            "mongoengine==0.24.2",
+            "influxdb==5.3.1",
+            "py2neo==2020.0.0",
+            "prometheus-api-client==0.5.1"
+        ],
+        'xorbits': [
+            "xorbits==0.3.2",
+            "pyarrow>=5.0.0"
+        ],
+    },
     keywords="etl, extract, transform, load, excel, csv, mysql, kafka, elasticsearch, neo4j, influxdb, mongodb, clickhouse",
 )

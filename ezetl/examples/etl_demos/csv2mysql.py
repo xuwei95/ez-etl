@@ -121,6 +121,7 @@ if not flag:
 for flag, read_data in reader.read_batch():
     if read_data['code'] == 200:
         write_data = read_data['data']['records']
+        print(write_data)
         write_data = [transform(i) for i in write_data]
         flg, res = writer.write(write_data)
         print(flg, res)

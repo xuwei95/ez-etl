@@ -110,48 +110,52 @@ def get_database_engine(db_info, res_type='engine'):
     :param db_obj: 数据库模型
     :return:
     '''
+    ENGINE_DICT = {
+        'mysql': 'mysql+pymysql',
+        'pgsql': 'postgresql+psycopg2',
+        'sqlserver': 'mssql+pymssql',
+        'oracle': 'oracle+cx_oracle',
+        'clickhouse': 'clickhouse',
+        'hive': 'hive'
+    }
     DB_TYPE = db_info.get('type')
-    DB_USER = db_info.get('username')
-    DB_PWD = db_info.get('password')
-    DB_HOST = db_info.get('host')
-    DB_PORT = db_info.get('port')
-    DB_NAME = db_info.get('database_name')
-    CHARSET = db_info.get('charset')
-    if db_info.get('use_tunnel'):
-        ssh_info = db_info.get('ssh_tunnel')
-        print(ssh_info)
-        ssh_host = ssh_info['ssh_host']
-        ssh_port = ssh_info['ssh_port']
-        ssh_user = ssh_info['ssh_user']
-        ssh_passwd = ssh_info['ssh_passwd']
-        server = SSHTunnelForwarder(
+    db_engine_url = None
+    if DB_TYPE in ENGINE_DICT:
+        DB_USER = db_info.get('username')
+        DB_PWD = db_info.get('password', '')
+        DB_HOST = db_info.get('host')
+        DB_PORT = db_info.get('port')
+        DB_NAME = db_info.get('database_name')
+        if db_info.get('use_tunnel'):
+            ssh_info = db_info.get('ssh_tunnel')
+            print(ssh_info)
+            ssh_host = ssh_info['ssh_host']
+            ssh_port = ssh_info['ssh_port']
+            ssh_user = ssh_info['ssh_user']
+            ssh_passwd = ssh_info['ssh_passwd']
+            server = SSHTunnelForwarder(
                 (ssh_host, int(ssh_port)),
                 ssh_username=ssh_user,
                 ssh_password=ssh_passwd,
                 remote_bind_address=(DB_HOST, int(DB_PORT))
-        )
-        server.start()
-        DB_PORT = str(server.local_bind_port)
-        # server.close()
-    ENGINE_DICT = {
-        'sqlserver': 'mssql+pymssql',
-        'oracle': 'oracle+cx_oracle',
-        'pgsql': 'postgresql+psycopg2',
-        'mysql': 'mysql+pymysql',
-        'clickhouse': 'clickhouse',
-        'clickhouse_native': 'clickhouse+native'
-    }
-    db_engine = None
-    if DB_TYPE in ENGINE_DICT:
-        db_engine_url = f"{ENGINE_DICT[DB_TYPE]}://{DB_USER}:{DB_PWD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-        if CHARSET:
-            db_engine_url += f'?charset={CHARSET}'
-        if res_type == 'engine_url':
-            return db_engine_url
-        db_engine = create_engine(
-            db_engine_url,
-            encoding='utf-8')
-    return db_engine
+            )
+            server.start()
+            DB_PORT = str(server.local_bind_port)
+            # server.close()
+        if DB_TYPE == 'hive':
+            if DB_PWD == '':
+                db_engine_url = f"{ENGINE_DICT[DB_TYPE]}://{DB_USER}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+            else:
+                db_engine_url = f"{ENGINE_DICT[DB_TYPE]}://{DB_USER}:{DB_PWD}@{DB_HOST}:{DB_PORT}/{DB_NAME}?auth=LDAP"
+        else:
+            db_engine_url = f"{ENGINE_DICT[DB_TYPE]}://{DB_USER}:{DB_PWD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    if res_type == 'engine_url':
+        return db_engine_url
+    if db_engine_url is not None:
+        db_engine = create_engine(db_engine_url)
+        return db_engine
+    else:
+        return None
 
 
 def get_database_model(table_name, db_engine=None, db_type='mysql'):
@@ -163,7 +167,7 @@ def get_database_model(table_name, db_engine=None, db_type='mysql'):
     try:
         DBSession = sessionmaker(bind=db_engine)
         session = DBSession()
-        if db_type in ['clickhouse']:
+        if db_type in ['oracle', 'clickhouse', 'hive']:
             metadata = MetaData()
             table = Table(table_name, metadata, autoload_with=db_engine)
             return session, table

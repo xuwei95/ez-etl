@@ -11,7 +11,7 @@ class CCxtModel(DataModel):
         super().__init__(model_info)
         model_conf = self._model.get('model_conf', {})
         self.exchange_id = model_conf.get('exchange_id', '')
-        self.ext_params = parse_json(model_conf.get('ext_params'), {})
+        self.ext_params = parse_json(self._model.get('ext_params'), {})
         self.method = model_conf.get('method', '')
         self.auth_types = model_conf.get('auth_type', '').split(',')
 
@@ -31,7 +31,10 @@ class CCxtModel(DataModel):
                 for name, param in params.items():
                     _default = param.default
                     if _default is inspect.Parameter.empty:
-                        _default = ""
+                        if name == 'symbol':
+                            _default = 'BTC/USDT'
+                        else:
+                            _default = ""
                     print(name, _default)
                     default_parmas[name] = _default
                 self.func_params = default_parmas

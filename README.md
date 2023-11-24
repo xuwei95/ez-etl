@@ -233,6 +233,8 @@ for flag, read_data in reader.read_batch():
 ## 支持数据源
 | 数据源类型 | 数据模型类型 | 读取 | 写入
 |:-----:|:-----:|:-----:|:-----:|
+| akshare财经数据接口 | 公开数据接口 | 支持 | - |
+| ccxt加密货币数据接口 | 公开数据接口 | 支持 | - |
 | http | json api | 支持 | - |
 | http | html | 支持 | - |
 | 文件 | 表格文件(csv/excel) | 支持 | - |
@@ -248,8 +250,16 @@ for flag, read_data in reader.read_batch():
 | mysql | mysql表 | 支持 | 支持 |
 | mysql | sql | 支持 | - |
 | mysql | binlog数据流 | 支持 | - |
+| pgsql | pgsql表 | 支持 | 支持 |
+| pgsql | sql | 支持 | - |
+| sqlserver | sqlserver表 | 支持 | 支持 |
+| sqlserver | sql | 支持 | - |
+| oracle | oracle表 | 支持 | 支持 |
+| oracle | sql | 支持 | - |
 | clickhouse | clickhouse表 | 支持 | 支持 |
 | clickhouse | sql | 支持 | - |
+| hive | hive表 | 支持 | 支持 |
+| hive | sql | 支持 | - |
 | elasticsearch | elasticsearch索引 | 支持 | 支持 |
 | mongodb | mongodb集合 | 支持 | 支持 |
 | neo4j | neo4j graph | 支持 | 支持 |

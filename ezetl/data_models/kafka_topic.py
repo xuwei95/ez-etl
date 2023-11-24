@@ -36,10 +36,9 @@ class KafkaTopicModel(DataModel):
         self.bootstrap_servers = conn_conf['bootstrap_servers']
         conn_setting = {'bootstrap_servers': self.bootstrap_servers}
         self.group_id = None
-        if 'ext_params' in model_conf:
-            ext_params = parse_json(model_conf.get('ext_params'), {})
-            for k in ext_params:
-                conn_setting[k] = ext_params[k]
+        ext_params = parse_json(self._model.get('ext_params'), {})
+        for k in ext_params:
+            conn_setting[k] = ext_params[k]
         self.err_info = ''
         self.read_type = 'latest'  # 默认从最新开始读
         self.gen_extract_rules()  # 判断是从头读还是从现在开始读

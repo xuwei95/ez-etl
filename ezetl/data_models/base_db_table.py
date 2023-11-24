@@ -1,10 +1,11 @@
 from ezetl.data_models import DataModel
 from ezetl.utils.db_utils import get_database_engine, get_database_model
-from ezetl.utils.common_utils import trans_rule_value, gen_json_response, parse_json
+from ezetl.utils.common_utils import trans_rule_value, gen_json_response
 from sqlalchemy import not_
 from sqlalchemy.sql.schema import Table
 from sqlalchemy import Column, String, Integer, Text, SmallInteger, DateTime, TIMESTAMP, Float
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.schema import CreateTable
 
 
 class BaseDBTableModel(DataModel):
@@ -151,9 +152,9 @@ class BaseDBTableModel(DataModel):
                     column = self.genColumn(i)
                 setattr(Model, i['field_value'], column)
 
-            from sqlalchemy.schema import CreateTable
-            print(CreateTable(Model.__table__))
             if table_name not in self.db_engine.table_names():
+                create_sql = str(CreateTable(Model.__table__).compile(self.db_engine))
+                print(create_sql)
                 Model.__table__.create(self.db_engine)
             self.db_engine.dispose()
             # 重新获取模型
@@ -327,7 +328,7 @@ class BaseDBTableModel(DataModel):
         生成器分批读取数据
         :return:
         '''
-        if not self.db_model:
+        if self.db_model is False:
             yield False, '数据库链接错误'
         flag, query = self.gen_extract_rules(self.db_model)
         if not flag:
@@ -392,6 +393,7 @@ class BaseDBTableModel(DataModel):
                 conn = self.db_engine.connect()
                 tmp_list = [{k: v for k, v in c.items() if k in columns} for c in insert_records]
                 conn.execute(ins, tmp_list)
+                conn.commit()
         except Exception as e:
             return False, f'{str(e)[:100]}'
         return True, res_data

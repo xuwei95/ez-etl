@@ -62,5 +62,5 @@ class OracleSqlModel(BaseDBSqlModel):
     def __init__(self, model_info):
         super().__init__(model_info)
         model_conf = self._model.get('model_conf', {})
-        self.sql = model_conf.get('sql', 'SELECT table_name FROM user_tables;')
+        self.sql = model_conf.get('sql', 'SELECT table_name FROM user_tables')
         self.default_sql = self.sql

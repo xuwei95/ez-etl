@@ -45,10 +45,10 @@ setup(
             "thrift",
             "thrift_sasl",
             "pyhive",
-            "mongoengine==0.24.2",
+            "py2neo",
+            "prometheus-api-client",
+            "mongoengine",
             "influxdb==5.3.1",
-            "py2neo==2020.0.0",
-            "prometheus-api-client==0.5.1"
         ],
         'xorbits': [
             "xorbits==0.3.2",

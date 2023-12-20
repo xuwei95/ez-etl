@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-version = '1.0.21'
+version = '1.0.23'
 
 setup(
     name='ez-etl',
@@ -17,15 +17,15 @@ setup(
     author_email='1013104194@qq.com',
     license='Apache License 2.0',
     install_requires=[
-        "requests==2.25.1",
-        "sshtunnel==0.4.0",
-        "python-dateutil==2.8.2",
+        "requests>=2.25.1",
+        "sshtunnel",
+        "python-dateutil",
         "pandas>=1.0.0",
-        "openpyxl==3.0.9",
-        "xlrd==1.2.0",
+        "openpyxl",
+        "xlrd",
         "minio==7.1.1",
         "sqlalchemy>=1.2.0",
-        "pymysql==1.0.2",
+        "pymysql",
         "elasticsearch>=7.17.2",
         "redis==4.0.2",
         "kafka-python==2.0.2",

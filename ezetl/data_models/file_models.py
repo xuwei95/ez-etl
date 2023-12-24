@@ -1,6 +1,6 @@
 import os.path
 from ezetl.data_models import DataModel
-from ezetl.utils.common_utils import trans_rule_value, read_file, md5, gen_json_response, parse_json
+from ezetl.utils.common_utils import trans_rule_value, read_file, md5, gen_json_response, parse_json, request_url
 import pandas as pd
 import io
 
@@ -62,8 +62,20 @@ class TableFileModel(BaseFileModel):
 
     def read_file_path(self, file_path, use_cache=False, cache_size=1000):
         '''
-        预览模式读取较大网络文件时缓存文件前n条直接读取
+        读取网络文件时缓存文件读取
         '''
+        # fix:新版pandas读取网络excel会报错，直接缓存到本地读取
+        if file_path.startswith('http') and (file_path.endswith('.xls') or file_path.endswith('.xlsx')):
+            if not os.path.exists('tmp'):
+                os.mkdir('tmp')
+            cache_file_path = os.path.join('tmp', f"{md5(file_path)}{'.xlsx' if file_path.endswith('.xlsx') else '.xls'}")
+            if not os.path.exists(cache_file_path):
+                res = request_url(file_path)
+                f = open(cache_file_path, 'wb')
+                f.write(res.content)
+                f.close()
+            file_obj = read_file(cache_file_path)
+            return file_obj
         if use_cache:
             if not os.path.exists('tmp'):
                 os.mkdir('tmp')
@@ -133,9 +145,6 @@ class TableFileModel(BaseFileModel):
           }, {
             'name': '小于等于',
             'value': 'lte'
-          }, {
-            'name': '缓存数据读取',
-            'value': 'use_cache'
           }
         ]
         return rules

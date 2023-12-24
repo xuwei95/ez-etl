@@ -2,6 +2,7 @@ from ezetl.data_models import DataModel
 from ezetl.utils.db_utils import get_database_engine
 from ezetl.utils.common_utils import gen_json_response
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy import text
 
 
 class BaseDBSqlModel(DataModel):
@@ -89,11 +90,11 @@ class BaseDBSqlModel(DataModel):
         self.gen_extract_rules()
         if 'custom_sql' not in self.auth_types and self.sql != self.default_sql:
             return False, '无修改sql权限'
-        cursor = self.session.execute(self.sql)
+        cursor = self.session.execute(text(self.sql))
         results = cursor.fetchall()
         total = len(results)
         results = results[(page - 1) * pagesize:page * pagesize]
-        data_li = [dict(zip(result.keys(), result)) for result in results]
+        data_li = [dict(zip(cursor.keys(), result)) for result in results]
         res_data = {
             'records': data_li,
             'total': total
@@ -108,10 +109,10 @@ class BaseDBSqlModel(DataModel):
         self.gen_extract_rules()
         if 'custom_sql' not in self.auth_types and self.sql != self.default_sql:
             return False, '无修改sql权限'
-        cursor = self.session.execute(self.sql)
+        cursor = self.session.execute(text(self.sql))
         results = cursor.fetchall()
         total = len(results)
-        data_li = [dict(zip(result.keys(), result)) for result in results]
+        data_li = [dict(zip(cursor.keys(), result)) for result in results]
         pagesize = self._extract_info.get('batch_size', 1000)
         total_pages = total // pagesize + 1
         n = 0

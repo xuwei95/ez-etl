@@ -32,6 +32,30 @@ class BaseRedisModel(DataModel):
         except Exception as e:
             return False, str(e)[:100]
 
+    def gen_models(self):
+        '''
+        生成子数据模型
+        '''
+        keys = self._client.keys("*")
+        model_list = []
+        type_map = {
+            'string': 'string',
+            'list': 'list',
+            'map': 'map',
+        }
+        for key in keys:
+            _type = self._client.type(key).decode('utf-8')
+            if _type in type_map:
+                dic = {
+                    'type': f'redis_{_type}',
+                    'model_conf': {
+                        "name": key,
+                        "auth_type": "query,create,edit_fields,delete,extract,load"
+                    }
+                }
+                model_list.append(dic)
+        return model_list
+
 
 class RedisStringModel(BaseRedisModel):
 

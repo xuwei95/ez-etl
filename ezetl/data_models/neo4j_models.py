@@ -260,6 +260,23 @@ class N4jSqlModel(DataModel):
         else:
             return False, f'连接失败'
 
+    def gen_models(self):
+        '''
+        生成子数据模型
+        '''
+        labels = self.n4j_client.query('CALL db.labels()')
+        model_list = []
+        for label in labels:
+            dic = {
+                'type': f'neo4j_graph',
+                'model_conf': {
+                    "name": label['label'],
+                    "auth_type": "query,create,edit_fields,delete,extract,load"
+                }
+            }
+            model_list.append(dic)
+        return model_list
+
     def get_res_fields(self):
         '''
         获取字段列表

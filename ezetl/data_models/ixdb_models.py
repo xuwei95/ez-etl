@@ -292,6 +292,25 @@ class InfluxDBSqlModel(DataModel):
         except Exception as e:
             return False, f'连接失败:{e}'
 
+    def gen_models(self):
+        '''
+        生成子数据模型
+        '''
+        df = self.ix_client.query_as_df('show measurements')
+        df.fillna("", inplace=True)
+        model_list = []
+        for k, row in df.iterrows():
+            table_name = row['name']
+            dic = {
+                'type': f'influxdb_table',
+                'model_conf': {
+                    "name": table_name,
+                    "auth_type": "query,edit_fields,extract,load"
+                }
+            }
+            model_list.append(dic)
+        return model_list
+
     def get_res_fields(self):
         '''
         获取字段列表

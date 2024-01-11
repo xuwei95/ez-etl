@@ -49,6 +49,26 @@ class BaseHttpModel(DataModel):
         except Exception as e:
             return False, str(e)[:100]
 
+    def gen_models(self):
+        '''
+        生成子数据模型
+        '''
+        model_list = []
+        try:
+            parse_json(self.response)
+            _type = 'json'
+        except Exception as e:
+            _type = 'html'
+        dic = {
+            'type': f'http_{_type}',
+            'model_conf': {
+                "name": f'http_{_type}',
+                "auth_type": "query,extract"
+            }
+        }
+        model_list.append(dic)
+        return model_list
+
 
 class HttpApiModel(BaseHttpModel):
 

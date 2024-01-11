@@ -42,6 +42,23 @@ class EsIndexModel(DataModel):
         except Exception as e:
             return False, str(e)[:100]
 
+    def gen_models(self):
+        '''
+        生成子数据模型
+        '''
+        mapping = self.es_client.get_mapping(self.index_name)
+        model_list = []
+        for index in mapping:
+            dic = {
+                'type': f'elasticsearch_index',
+                'model_conf': {
+                    "name": index,
+                    "auth_type": "query,create,edit_fields,delete,extract,load"
+                }
+            }
+            model_list.append(dic)
+        return model_list
+
     def get_res_fields(self):
         '''
         获取字段列表

@@ -77,9 +77,7 @@ def df_to_data(source_data=[], rule_dict={}, context={}):
     '''
     try:
         if not isinstance(source_data, list) and not isinstance(source_data, dict):
-            data_li = []
-            for k, row in source_data.iterrows():
-                data_li.append(row.to_dict())
+            data_li = source_data.to_dict(orient='records')
             return True, data_li
         else:
             return True, source_data

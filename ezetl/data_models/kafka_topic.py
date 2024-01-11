@@ -2,7 +2,7 @@ import json
 import datetime
 from ezetl.data_models import DataModel
 from kafka import KafkaConsumer, KafkaProducer
-from ezetl.libs.kafka_utils import fetch_kafka_data_by_page
+from ezetl.libs.kafka_utils import fetch_kafka_data_by_page, list_all_topics
 from ezetl.utils.common_utils import gen_json_response, parse_json
 
 
@@ -75,6 +75,23 @@ class KafkaTopicModel(DataModel):
             return True, '连接成功'
         except Exception as e:
             return False, '连接失败:' + str(e)
+
+    def gen_models(self):
+        '''
+        生成子数据模型
+        '''
+        topic_list = list_all_topics(self.bootstrap_servers)
+        model_list = []
+        for topic in topic_list:
+            dic = {
+                'type': f'kafka_topic',
+                'model_conf': {
+                    "name": topic,
+                    "auth_type": "query,extract,load"
+                }
+            }
+            model_list.append(dic)
+        return model_list
 
     def get_res_fields(self):
         '''

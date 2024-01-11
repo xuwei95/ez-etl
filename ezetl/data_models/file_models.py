@@ -25,6 +25,30 @@ class BaseFileModel(DataModel):
         except Exception as e:
             return False, str(e)
 
+    def gen_models(self):
+        '''
+        生成子数据模型
+        '''
+        model_list = []
+        if self.file_path.endswith(('.xlsx', '.xls', '.csv')):
+            file_type = 'table'
+        elif self.file_path.endswith('.json'):
+            file_type = 'json'
+        elif self.file_path.endswith('.h5'):
+            file_type = 'h5'
+        else:
+            file_type = ''
+        if file_type != '':
+            dic = {
+                'type': f'file_{file_type}',
+                'model_conf': {
+                    "name": self.file_path.split('/')[-1],
+                    "auth_type": "query,extract"
+                }
+            }
+            model_list.append(dic)
+        return model_list
+
 
 class TableFileModel(BaseFileModel):
 

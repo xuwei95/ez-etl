@@ -20,6 +20,12 @@ class DataModel(ABC):
         '''
         pass
 
+    def gen_models(self):
+        '''
+        生成子数据模型
+        '''
+        return []
+
     def create(self):
         '''
         创建

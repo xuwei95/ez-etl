@@ -41,6 +41,24 @@ class MongoModel(DataModel):
             print(e)
             return False, str(e)[:100]
 
+    def gen_models(self):
+        '''
+        生成子数据模型
+        '''
+        db = mongoengine.connection.get_db()
+        collection_names = db.list_collection_names()
+        model_list = []
+        for collection_name in collection_names:
+            dic = {
+                'type': f'mongodb_collection',
+                'model_conf': {
+                    "name": collection_name,
+                    "auth_type": "query,create,edit_fields,delete,extract,load"
+                }
+            }
+            model_list.append(dic)
+        return model_list
+
     def get_res_fields(self):
         '''
         获取字段列表

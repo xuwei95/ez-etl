@@ -137,3 +137,18 @@ def fetch_kafka_data_by_page(page=0, pagesize=10, bootstrap_servers=None, topic=
             }
         n += 1
 
+
+def list_all_topics(bootstrap_servers):
+    """
+    获取Kafka集群中的所有主题。
+    :param bootstrap_servers: Kafka集群的服务器地址，格式为"host1:port1,host2:port2"。
+    :return: 主题列表。
+    """
+    try:
+        # 创建一个KafkaConsumer实例，但不订阅任何主题
+        consumer = KafkaConsumer(bootstrap_servers=bootstrap_servers)
+        # 获取并返回所有主题
+        return list(consumer.topics())
+    except Exception as e:
+        print(f"Error in listing topics: {e}")
+        return []

@@ -2,7 +2,7 @@ from ezetl.data_models import DataModel
 from ezetl.utils.db_utils import get_database_engine
 from ezetl.utils.common_utils import gen_json_response
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import text
+from sqlalchemy import text, MetaData
 
 
 class BaseDBSqlModel(DataModel):
@@ -32,6 +32,24 @@ class BaseDBSqlModel(DataModel):
                 return False, '连接失败'
         except Exception as e:
             return False, f'{e}'
+
+    def gen_models(self):
+        '''
+        生成子数据模型
+        '''
+        metadata = MetaData()
+        metadata.reflect(bind=self.db_engine)
+        model_list = []
+        for table_name in metadata.tables:
+            dic = {
+                'type': f'{self.db_type}_table',
+                'model_conf': {
+                    "name": table_name,
+                    "auth_type": "query,create,edit_fields,delete,extract,load"
+                }
+            }
+            model_list.append(dic)
+        return model_list
 
     def get_res_fields(self):
         '''
